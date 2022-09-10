@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 
 // Sort List Using Bubble Sort
 void bubbleSort(vector<int>& list) {
@@ -43,7 +45,11 @@ int main(int argc, char* argv[]) {
 	input.close();
 
 	// Sort List Using Bubble Sort
+	auto startTimer = high_resolution_clock::now();
 	bubbleSort(list);
+	auto stopTimer = high_resolution_clock::now();
+	auto duration = duration_cast<nanoseconds>(stopTimer - startTimer);
+	cout << duration.count() << " nanoseconds" << endl;
 
 	// Put Sorted List In Output File
 	ofstream output(argv[2]);
