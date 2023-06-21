@@ -1,2 +1,2 @@
 # algorithms
-Random list of algorithms
+Random algorithms
