@@ -39,7 +39,7 @@ bool relax_edge(Edge &edge, vector<Vertex> &vertices, int root_id) {
 // Calculate SSSP from newly created vertex with zero-weighted edges to all vertices
 bool bellman_ford(vector<Vertex> &vertices, vector<Edge> &edges, int root_id) {
     // Relax all edges |V| - 1 times (|V| being number of vertices in the graph)
-    for (int i = 0; i < vertices.size(); i++) {
+    for (int i = 0; i < vertices.size() - 1; i++) {
         bool did_relax = false;
 
         for (Edge &edge : edges) {
