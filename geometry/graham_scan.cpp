@@ -26,13 +26,13 @@ int main() {
     // get number of points
     size_t n;
     std::cin >> n;
-    
+
     // get points list
     std::vector<point_2d> points(n);
     for (size_t i = 0; i < n; i++) {
         std::cin >> points[i].x >> points[i].y;
     }
-    
+
     // remove duplicate points
     std::sort(points.begin(), points.end(), [](const point_2d &a, const point_2d &b) {
         if (std::fabs(a.x - b.x) > EPS) {
@@ -42,7 +42,7 @@ int main() {
     });
     points.erase(std::unique(points.begin(), points.end(), [](const point_2d &a, const point_2d &b) { return a == b; }), points.end());
     n = points.size();
-    
+
     if (n <= 2) {
         // trivial answer if under 3 unique points
         std::cout << n << "\n";
@@ -57,21 +57,21 @@ int main() {
                 pivot_index = i;
             }
         }
-        
+
         // put pivot point at array start and sort rest of the array
         std::swap(points[0], points[pivot_index]);
         std::sort(points.begin() + 1, points.end(), [&](const point_2d &a, const point_2d &b) {
             double cross_product = a.cross(points[0], b);
-        
+
             if (std::fabs(cross_product) < EPS) {
                 // collinear: nearer first
                 return a.dist_squared(points[0]) < b.dist_squared(points[0]);
             }
-        
+
             // not collinear: descending cross product gives counterclockwise order
             return cross_product > EPS;
         });
-        
+
         // Graham scan through all points, keeping only those that turn counterclockwise.
         std::vector<size_t> hull_indices;
         hull_indices.push_back(0);
