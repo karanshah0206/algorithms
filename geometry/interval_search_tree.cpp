@@ -141,6 +141,8 @@ private:
 
         if (newNode->lo == current->lo && newNode->hi == current->hi) {
             current->val = newNode->val;
+            delete newNode;
+            return current;
         } else if (newNode->lo < current->lo) {
             current->left = insert(newNode, current->left);
         } else {
@@ -178,6 +180,7 @@ private:
     // LLRB Helper: deletes the node with the smallest key in the tree rooted on the give node
     llrb_node *del_min(llrb_node *current) {
         if (current->left == llrb_node::NIL) {
+            delete current;
             return llrb_node::NIL;
         }
 
@@ -204,6 +207,7 @@ private:
             }
 
             if (lo == current->lo && hi == current->hi && current->right == llrb_node::NIL) {
+                delete current;
                 return llrb_node::NIL;
             }
 
@@ -253,7 +257,7 @@ private:
     }
 
     // called by destructor
-    void destroy_subtree(llrb_node *current) {
+    void destroy_subtree(llrb_node *current) noexcept {
         if (current != llrb_node::NIL) {
             destroy_subtree(current->left);
             destroy_subtree(current->right);
@@ -262,12 +266,35 @@ private:
     }
 
 public:
+    // default constructor
     interval_search_tree() {
         root = llrb_node::NIL;
     }
 
-    ~interval_search_tree() {
+    // destructor
+    ~interval_search_tree() noexcept {
         destroy_subtree(root);
+    }
+
+    // no copy constructor/assignment
+    interval_search_tree(const interval_search_tree &) = delete;
+    interval_search_tree &operator=(const interval_search_tree &) = delete;
+
+    // move constructor
+    interval_search_tree(interval_search_tree &&other) noexcept {
+        root = other.root;
+        other.root = llrb_node::NIL;
+    }
+
+    // move assignment
+    interval_search_tree &operator=(interval_search_tree &&other) noexcept {
+        if (this != &other) {
+            destroy_subtree(root);
+            root = other.root;
+            other.root = llrb_node::NIL;
+        }
+
+        return *this;
     }
 
     // Add interval [lo, hi], or update its value if it is already in the tree
@@ -336,9 +363,10 @@ public:
 
 // initialising sentinel node
 template<std::totally_ordered Key, typename Value>
-typename interval_search_tree<Key, Value>::llrb_node
-    *interval_search_tree<Key, Value>::llrb_node::NIL =
-    new interval_search_tree<Key, Value>::llrb_node();
+typename interval_search_tree<Key, Value>::llrb_node *interval_search_tree<Key, Value>::llrb_node::NIL = [] {
+    static llrb_node sentinel;
+    return &sentinel;
+}();
 
 // test client
 int main() {
@@ -352,16 +380,54 @@ int main() {
     ist.put(7, 10, "(7, 10)");
     ist.put(16, 22, "(16, 22)");
 
-    std::pair<int, int> intersection_query = { 21, 23 };
-    // check single intersection interval
-    std::optional<std::string> intersection_result = ist.find_intersection(intersection_query.first, intersection_query.second);
-    if (intersection_result) {
-        std::cout << *intersection_result << "\n";
+    // Test get operation
+    std::cout <<"Checking if interval (5, 8) exists in tree: ";
+    std::optional<std::string> result = ist.get(5, 8);
+    if (result) {
+        std::cout << "Yes. Value stored at this interval = " << *result << "\n";
     } else {
-        std::cout << "No interval intersecting query interval.\n";
+        std::cout << "No. Looks like there's an issue with get!\n";
     }
-    // check all intersection intervals
-    for (std::string &s : ist.find_intersections(intersection_query.first, intersection_query.second)) {
+    std::cout << "Checking if interval (100, 100) exists in tree: ";
+    result = ist.get(100, 100);
+    if (result) {
+        std::cout << "Yes. Looks like there's an issue with get!\n";
+    } else {
+        std::cout << "No.\n";
+    }
+
+    // Test insert on existing interval (value update)
+    ist.put(5, 8, "Updated value!");
+    std::cout << "Updated value at (5, 8): " << *ist.get(5, 8) << "\n";
+
+    // Test interval query operations and delete operation
+    std::pair<int, int> intersection_query = { 21, 23 };
+    for (int i = 0; i <= 2; i++) {
+        std::cout << "\n";
+        if (i == 0) {
+            std::cout << "Checking intersections with (21, 23)\n";
+        } else if (i == 1) {
+            ist.del(16, 22);
+            std::cout << "Deleted (16, 22), checking intersections with (21, 23) again\n";
+        } else if (i == 2) {
+            ist.del(21, 24);
+            std::cout << "Deleted (21, 24), checking intersections with (21, 23) again\n";
+        }
+
+        std::optional<std::string> intersection_result = ist.find_intersection(intersection_query.first, intersection_query.second);
+        if (intersection_result) {
+            std::cout << "Single interval intersection: " << *intersection_result << "\n";
+            std::cout << "All interval intersections: ";
+            for (std::string &s : ist.find_intersections(intersection_query.first, intersection_query.second)) {
+                std::cout << s << " ";
+            }
+            std::cout << "\n";
+        } else {
+            std::cout << "No interval intersecting query interval.\n";
+        }
+    }
+    std::cout << "\nAll intersections with interval (-100, 100): ";
+    for (std::string &s : ist.find_intersections(-100, 100)) {
         std::cout << s << " ";
     }
     std::cout << "\n";
